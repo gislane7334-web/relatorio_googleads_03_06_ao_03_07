@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relatório de Desempenho — Google Ads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0D0D0D; --card:#1A1A1A; --border:#2A2A2A;
+    --text:#F2F2F2; --muted:#9A9A9A; --green:#22C55E; --green2:#4ADE80;
+    --amber:#F59E0B; --red:#EF4444;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; padding:32px 40px 80px;}
+  h1,h2,h3{font-family:'Sora',sans-serif; margin:0;}
+  .header{display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--border); padding-bottom:20px; margin-bottom:28px; flex-wrap:wrap; gap:16px;}
+  .header h1{font-size:26px; font-weight:800;}
+  .header p{color:var(--muted); margin:6px 0 0; font-size:14px;}
+  .header .meta{text-align:right; font-size:13px; color:var(--muted);}
+  .header .meta b{color:var(--text);}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:32px;}
+  .kpi{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 20px; position:relative;}
+  .kpi .label{font-size:13px; color:var(--muted); display:flex; align-items:center; gap:6px;}
+  .kpi .value{font-size:26px; font-weight:800; font-family:'Sora',sans-serif; margin-top:8px;}
+  .kpi .sub{font-size:12.5px; color:var(--muted); margin-top:6px;}
+  .kpi .sub.up{color:var(--green2);}
+  .kpi .sub.down{color:var(--red);}
+  .info-dot{width:14px; height:14px; border-radius:50%; border:1px solid var(--muted); display:inline-flex; align-items:center; justify-content:center; font-size:9px; color:var(--muted); cursor:help; position:relative;}
+  .info-dot .tip{display:none; position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:#000; color:#fff; padding:8px 10px; border-radius:6px; font-size:11.5px; width:210px; line-height:1.4; z-index:10; border:1px solid var(--border); font-weight:400;}
+  .info-dot:hover .tip{display:block;}
+  section{margin-bottom:32px;}
+  .section-title{display:flex; align-items:center; gap:8px; margin-bottom:14px;}
+  .section-title .dot{width:8px; height:8px; border-radius:50%; background:var(--green);}
+  .section-title.amber .dot{background:var(--amber);}
+  .section-title h2{font-size:18px; font-weight:700;}
+  .note{background:#161616; border:1px solid var(--border); border-radius:10px; padding:12px 16px; font-size:12.5px; color:var(--muted); margin-bottom:24px; line-height:1.5;}
+  .chart-card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px;}
+  .chart-tabs{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+  .chart-tab{background:transparent; border:1px solid var(--border); color:var(--muted); padding:6px 14px; border-radius:8px; font-size:13px; cursor:pointer; font-family:'Inter';}
+  .chart-tab.active{background:var(--green); color:#06210F; border-color:var(--green); font-weight:600;}
+  .chart-wrap{height:320px;}
+  .cards-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px;}
+  .diag-card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; border-left:3px solid var(--green);}
+  .diag-card.attention{border-left:3px solid var(--amber);}
+  .diag-card.critical{border-left:3px solid var(--red);}
+  .diag-card h3{font-size:15px; margin-bottom:10px;}
+  .diag-card p{font-size:13.5px; color:#D0D0D0; line-height:1.55; margin:0 0 8px;}
+  .diag-card p:last-child{margin-bottom:0;}
+  .diag-card .tag{font-size:11px; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:var(--green2); margin-bottom:8px; display:block;}
+  .diag-card.attention .tag{color:var(--amber);}
+  table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  th,td{text-align:left; padding:10px 8px; border-bottom:1px solid var(--border);}
+  th{color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.03em;}
+  td.num, th.num{text-align:right; font-variant-numeric:tabular-nums;}
+  .steps{display:flex; flex-direction:column; gap:10px;}
+  .step{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 18px; display:flex; gap:14px; align-items:flex-start;}
+  .step .num{background:var(--green); color:#06210F; font-weight:800; font-size:13px; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;}
+  .step .txt b{color:var(--text);}
+  .step .txt{font-size:13.5px; color:#D0D0D0; line-height:1.5;}
+  footer{border-top:1px solid var(--border); padding-top:18px; margin-top:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;}
+  footer p{color:var(--muted); font-size:12px; max-width:640px; line-height:1.5;}
+  .copy-btn{background:var(--green); color:#06210F; border:none; padding:10px 18px; border-radius:8px; font-weight:700; font-size:13.5px; cursor:pointer; font-family:'Inter'; white-space:nowrap;}
+  .copy-btn.copied{background:var(--green2);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Relatório de Desempenho — Google Ads</h1>
+    <p>Conta analisada via exportação de série temporal do Google Ads</p>
+  </div>
+  <div class="meta">
+    Período: <b>03/06/2026 – 03/07/2026</b> (31 dias)<br>
+    Gerado em: <b>03/07/2026</b>
+  </div>
+</div>
+
+<div class="note">Este export traz apenas Impressões, Conversões e Custo (sem cliques, CTR ou CPC). A análise abaixo trabalha com essas três métricas — CPA e CPM foram calculados a partir delas.</div>
+
+<div class="kpis">
+  <div class="kpi">
+    <div class="label">Impressões totais <span class="info-dot">i<span class="tip">Quantidade total de vezes que os anúncios foram exibidos no período.</span></span></div>
+    <div class="value">13.610</div>
+    <div class="sub">31 dias no período</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Conversões totais <span class="info-dot">i<span class="tip">Total de ações de conversão registradas no período.</span></span></div>
+    <div class="value">62</div>
+    <div class="sub">média de 2/dia</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Custo total <span class="info-dot">i<span class="tip">Total investido em mídia no período.</span></span></div>
+    <div class="value">R$ 1.777</div>
+    <div class="sub">média de R$ 57,32/dia</div>
+  </div>
+  <div class="kpi">
+    <div class="label">CPA médio <span class="info-dot">i<span class="tip">Custo por conversão: custo total ÷ conversões totais.</span></span></div>
+    <div class="value">R$ 28,66</div>
+    <div class="sub">custo por conversão no período</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Pico de impressões <span class="info-dot">i<span class="tip">Maior volume de impressões em um único dia do período.</span></span></div>
+    <div class="value">1.754</div>
+    <div class="sub up">▲ quinta, 02/07</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Últimos 7 dias vs. 7 anteriores <span class="info-dot">i<span class="tip">Compara 27/06–03/07 com 20/06–26/06 em impressões.</span></span></div>
+    <div class="value" style="color:var(--green2)">+111,0%</div>
+    <div class="sub up">▲ 4.848 vs. 2.298 impressões</div>
+  </div>
+</div>
+
+<section>
+  <div class="section-title"><span class="dot"></span><h2>Evolução no período</h2></div>
+  <div class="chart-card">
+    <div class="chart-tabs">
+      <button class="chart-tab active" data-metric="impr">Impressões</button>
+      <button class="chart-tab" data-metric="conv">Conversões</button>
+      <button class="chart-tab" data-metric="custo">Custo (R$)</button>
+      <button class="chart-tab" data-metric="cpm">CPM (R$/mil)</button>
+    </div>
+    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-title"><span class="dot"></span><h2>O que está funcionando</h2></div>
+  <div class="cards-grid">
+    <div class="diag-card">
+      <span class="tag">Melhor dia da semana</span>
+      <h3>Quarta-feira concentra 31% das conversões com o melhor CPA da conta</h3>
+      <p>As 5 quartas do período somaram 19 conversões (quase 1 a cada 3 do total) a um CPA médio de R$15,34 — quase metade do CPA médio da conta (R$28,66).</p>
+      <p>É o dia com melhor retorno por real investido. Vale concentrar mais orçamento nas quartas e testar aumentar o lance nesse dia específico via ajuste de programação de anúncios.</p>
+    </div>
+    <div class="diag-card">
+      <span class="tag">Custo por impressão em queda</span>
+      <h3>CPM caiu de ~R$130 para R$18–61 nos últimos 3 dias</h3>
+      <p>Em 01/07, 02/07 e 03/07 o CPM foi de R$61,45, R$29,13 e R$18,89 — muito abaixo da média do período (R$130,57). No dia de pico (02/07), a conta pagou 4,5x menos por mil impressões que a média histórica.</p>
+      <p>É uma janela de alcance barato. Vale testar um aumento pontual de orçamento enquanto o CPM segue baixo, monitorando se o CPA se mantém sob controle (ver ponto de atenção sobre 03/07 abaixo).</p>
+    </div>
+    <div class="diag-card">
+      <span class="tag">Picos de eficiência isolados</span>
+      <h3>24/06 e 29/06 tiveram o menor CPA do mês: R$8,99 e R$10,91</h3>
+      <p>Ambas terças-feiras, com 6 conversões cada — o dobro da média diária de conversões da conta a menos de 40% do CPA médio.</p>
+      <p>Vale revisar o que rodou nesses dois dias (públicos ativos, criativos, lances) — se for repetível, é o playbook mais barato de conversão que a conta já produziu no período.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-title amber"><span class="dot"></span><h2>Pontos de atenção</h2></div>
+  <div class="cards-grid">
+    <div class="diag-card attention">
+      <span class="tag">Prioridade 1</span>
+      <h3>7 dos 31 dias não geraram nenhuma conversão — R$336,56 sem retorno</h3>
+      <p>07/06, 11/06, 13/06, 19/06, 20/06, 27/06 e 03/07 tiveram investimento (de R$13 a R$74 por dia) e zero conversões, somando 19% do orçamento do período sem nenhum resultado direto.</p>
+      <p>Vale cruzar esses dias com mudanças de público, orçamento ou concorrência para entender se é padrão (ex: sempre no fim de semana) ou ruído pontual.</p>
+    </div>
+    <div class="diag-card attention">
+      <span class="tag">Prioridade 2</span>
+      <h3>Sábado é o pior dia: 1 conversão em 5 semanas, CPA de R$161,54</h3>
+      <p>As 5 sábados do período somaram R$161,54 de custo e apenas 1 conversão — um CPA 5,6x maior que a média da conta. É o único dia da semana com CPA de três dígitos.</p>
+      <p>Vale reduzir ou zerar o orçamento aos sábados e realocar essa verba para quarta-feira, que tem o melhor retorno.</p>
+    </div>
+    <div class="diag-card attention">
+      <span class="tag">Prioridade 3</span>
+      <h3>O salto de impressões não veio acompanhado de mais conversões</h3>
+      <p>02/07 bateu recorde de impressões (1.754) mas fechou com apenas 3 conversões, e 03/07 (710 impressões, a 3ª maior do mês) fechou zerado. O CPM caiu, mas a taxa de conversão por impressão despencou nesses dois dias.</p>
+      <p>Antes de escalar orçamento na janela de CPM baixo, confirme se esse alcance extra está vindo de posicionamentos qualificados (Pesquisa/Display de qualidade) e não de inventário de baixo valor.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-title"><span class="dot"></span><h2>Desempenho por dia da semana</h2></div>
+  <div class="chart-card">
+    <table>
+      <thead><tr><th>Dia</th><th class="num">Impr. média/dia</th><th class="num">Conversões (total)</th><th class="num">Custo total</th><th class="num">CPA</th></tr></thead>
+      <tbody>
+        <tr><td>Quarta</td><td class="num">466</td><td class="num" style="color:var(--green2); font-weight:700;">19</td><td class="num">R$ 291,39</td><td class="num" style="color:var(--green2); font-weight:700;">R$ 15,34</td></tr>
+        <tr><td>Segunda</td><td class="num">436,5</td><td class="num">13</td><td class="num">R$ 299,87</td><td class="num">R$ 23,07</td></tr>
+        <tr><td>Terça</td><td class="num">319</td><td class="num">8</td><td class="num">R$ 249,17</td><td class="num">R$ 31,15</td></tr>
+        <tr><td>Quinta</td><td class="num">692,6</td><td class="num">9</td><td class="num">R$ 300,06</td><td class="num">R$ 33,34</td></tr>
+        <tr><td>Sexta</td><td class="num">426,8</td><td class="num">7</td><td class="num">R$ 248,24</td><td class="num">R$ 35,46</td></tr>
+        <tr><td>Domingo</td><td class="num">352,2</td><td class="num">5</td><td class="num">R$ 226,73</td><td class="num">R$ 45,35</td></tr>
+        <tr><td>Sábado</td><td class="num">313</td><td class="num" style="color:var(--red); font-weight:700;">1</td><td class="num">R$ 161,54</td><td class="num" style="color:var(--red); font-weight:700;">R$ 161,54</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="section-title"><span class="dot"></span><h2>Próximos passos (7 dias)</h2></div>
+  <div class="steps">
+    <div class="step"><div class="num">1</div><div class="txt"><b>Realoque orçamento de sábado para quarta-feira</b> — sábado converte a R$161,54 (1 conversão em 5 semanas), quarta converte a R$15,34 (19 conversões). É a troca de maior impacto disponível agora.</div></div>
+    <div class="step"><div class="num">2</div><div class="txt"><b>Audite a qualidade dos posicionamentos de 02/07 e 03/07</b> — o CPM caiu para R$18-29, mas a conversão não acompanhou. Confirme na aba "Onde os anúncios foram exibidos" se o alcance extra é rede de Display/parceiros de baixo valor.</div></div>
+    <div class="step"><div class="num">3</div><div class="txt"><b>Teste um aumento pontual de orçamento enquanto o CPM segue baixo</b> — mas com teto de CPA definido (sugestão: R$30) para não desperdiçar a janela de alcance barato em tráfego que não converte.</div></div>
+    <div class="step"><div class="num">4</div><div class="txt"><b>Investigue os 7 dias sem nenhuma conversão</b> (07/06, 11/06, 13/06, 19/06, 20/06, 27/06, 03/07) — R$336,56 gastos sem retorno; veja se coincidem com mudanças de público, lance ou orçamento.</div></div>
+    <div class="step"><div class="num">5</div><div class="txt"><b>Replique o padrão de 24/06 e 29/06</b> — os dois dias de CPA mais baixo do mês (R$8,99 e R$10,91), ambos terças-feiras. Reveja públicos e criativos ativos nesses dias para repetir o resultado.</div></div>
+  </div>
+</section>
+
+<footer>
+  <p>Relatório gerado a partir da série temporal do Google Ads de 03/06/2026 a 03/07/2026. O export não inclui cliques, CTR ou CPC — todas as métricas derivadas (CPA, CPM) foram calculadas a partir de Impressões, Conversões e Custo.</p>
+  <button class="copy-btn" id="copyBtn">Copiar resumo executivo</button>
+</footer>
+
+<script>
+const dados = [
+{"data":"03/06","impr":417,"conv":5,"custo":71.65,"cpm":171.82},
+{"data":"04/06","impr":444,"conv":1,"custo":44.81,"cpm":100.92},
+{"data":"05/06","impr":347,"conv":3,"custo":62.68,"cpm":180.63},
+{"data":"06/06","impr":434,"conv":1,"custo":39.99,"cpm":92.14},
+{"data":"07/06","impr":446,"conv":0,"custo":66.34,"cpm":148.74},
+{"data":"08/06","impr":588,"conv":3,"custo":96.08,"cpm":163.4},
+{"data":"09/06","impr":472,"conv":2,"custo":81.33,"cpm":172.31},
+{"data":"10/06","impr":180,"conv":2,"custo":46.32,"cpm":257.33},
+{"data":"11/06","impr":382,"conv":0,"custo":73.82,"cpm":193.25},
+{"data":"12/06","impr":249,"conv":2,"custo":48.47,"cpm":194.66},
+{"data":"13/06","impr":216,"conv":0,"custo":43.76,"cpm":202.59},
+{"data":"14/06","impr":268,"conv":2,"custo":57.64,"cpm":215.07},
+{"data":"15/06","impr":320,"conv":2,"custo":55.13,"cpm":172.28},
+{"data":"16/06","impr":330,"conv":3,"custo":59.8,"cpm":181.21},
+{"data":"17/06","impr":467,"conv":4,"custo":60.85,"cpm":130.3},
+{"data":"18/06","impr":452,"conv":2,"custo":69.87,"cpm":154.58},
+{"data":"19/06","impr":452,"conv":0,"custo":61.44,"cpm":135.93},
+{"data":"20/06","impr":249,"conv":0,"custo":51.24,"cpm":205.78},
+{"data":"21/06","impr":302,"conv":2,"custo":60.75,"cpm":201.16},
+{"data":"22/06","impr":414,"conv":2,"custo":83.22,"cpm":201.01},
+{"data":"23/06","impr":214,"conv":2,"custo":66.95,"cpm":312.85},
+{"data":"24/06","impr":312,"conv":6,"custo":53.95,"cpm":172.92},
+{"data":"25/06","impr":431,"conv":3,"custo":60.47,"cpm":140.3},
+{"data":"26/06","impr":376,"conv":2,"custo":62.24,"cpm":165.53},
+{"data":"27/06","impr":353,"conv":0,"custo":26.55,"cpm":75.21},
+{"data":"28/06","impr":393,"conv":1,"custo":42.0,"cpm":106.87},
+{"data":"29/06","impr":424,"conv":6,"custo":65.44,"cpm":154.34},
+{"data":"30/06","impr":260,"conv":1,"custo":41.09,"cpm":158.04},
+{"data":"01/07","impr":954,"conv":2,"custo":58.62,"cpm":61.45},
+{"data":"02/07","impr":1754,"conv":3,"custo":51.09,"cpm":29.13},
+{"data":"03/07","impr":710,"conv":0,"custo":13.41,"cpm":18.89}
+];
+
+const labels = dados.map(d => d.data);
+const metricConfig = {
+  impr: {label:'Impressões', color:'#22C55E', fill:'rgba(34,197,94,0.15)', format: v => v.toLocaleString('pt-BR')},
+  conv: {label:'Conversões', color:'#4ADE80', fill:'rgba(74,222,128,0.12)', format: v => v.toLocaleString('pt-BR')},
+  custo: {label:'Custo (R$)', color:'#F59E0B', fill:'rgba(245,158,11,0.12)', format: v => 'R$ '+v.toFixed(2).replace('.',',')},
+  cpm: {label:'CPM (R$/mil)', color:'#60A5FA', fill:'rgba(96,165,250,0.12)', format: v => 'R$ '+v.toFixed(2).replace('.',',')}
+};
+
+const ctx = document.getElementById('mainChart').getContext('2d');
+let currentMetric = 'impr';
+
+function buildChart(metric){
+  const cfg = metricConfig[metric];
+  const data = dados.map(d => d[metric]);
+  if(window.mainChartInstance) window.mainChartInstance.destroy();
+  window.mainChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels: labels, datasets: [{ label: cfg.label, data: data, borderColor: cfg.color, backgroundColor: cfg.fill, fill: true, tension: 0.35, pointRadius: 2, pointBackgroundColor: cfg.color, borderWidth: 2 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {display:false},
+        tooltip: { backgroundColor:'#000', borderColor:'#2A2A2A', borderWidth:1, titleColor:'#fff', bodyColor:'#fff', padding:10, callbacks:{ label:(item)=>cfg.format(item.raw) } }
+      },
+      scales: {
+        x: { grid:{color:'#222'}, ticks:{color:'#9A9A9A', font:{size:11}, maxRotation:0, autoSkip:true, maxTicksLimit:12} },
+        y: { grid:{color:'#222'}, ticks:{color:'#9A9A9A', font:{size:11}, callback:(v)=> (metric==='custo'||metric==='cpm') ? 'R$'+v : v.toLocaleString('pt-BR') }, beginAtZero:true }
+      }
+    }
+  });
+}
+buildChart(currentMetric);
+
+document.querySelectorAll('.chart-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMetric = btn.dataset.metric;
+    buildChart(currentMetric);
+  });
+});
+
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const resumo = `Resumo do período (03/06–03/07/2026): 13.610 impressões, 62 conversões e R$1.777,00 investidos, CPA médio de R$28,66. Destaque: quarta-feira é o melhor dia (19 conversões, CPA de R$15,34). Atenção: sábado tem CPA de R$161,54 (quase sem conversão) e 7 dias do período não geraram nenhuma conversão, consumindo R$336,56.`;
+  navigator.clipboard.writeText(resumo).then(() => {
+    const btn = document.getElementById('copyBtn');
+    const original = btn.textContent;
+    btn.textContent = 'Copiado ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 2000);
+  });
+});
+</script>
+
+</body>
+</html>
